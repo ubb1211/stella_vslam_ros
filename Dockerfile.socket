@@ -127,9 +127,9 @@ RUN set -x && \
   apt-get update -y -qq && \
   : "install ROS2 packages" && \
   apt-get install -y -qq \
-    ros-${ROS_DISTRO}-image-transport \
-    ros-${ROS_DISTRO}-cv-bridge \
-    ros-${ROS_DISTRO}-rosbag2-storage-mcap \
+    ros-humble-image-transport \
+    ros-humble-cv-bridge \
+    ros-humble-rosbag2-storage-mcap \
     python3-pip \
     python3-colcon-common-extensions && \
   pip3 install -U \
@@ -143,12 +143,12 @@ COPY . /ros2_ws/src/stella_vslam_ros
 
 RUN set -x && \
   : "build ROS2 packages" && \
-  bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash; \
-  colcon build --parallel-workers ${NUM_THREADS} --cmake-args \
+  bash -c "source /opt/ros/humble/setup.bash; \
+  colcon build --parallel-workers 4 --cmake-args \
     -DUSE_STACK_TRACE_LOGGER=ON"
 
 RUN set -x && \
-  sh -c "echo '#'\!'/bin/bash\nset -e\nsource /opt/ros/${ROS_DISTRO}/setup.bash\nsource /ros2_ws/install/setup.bash\nexec \"\$@\"' > /ros_entrypoint.sh" && \
+  sh -c "echo '#'\!'/bin/bash\nset -e\nsource /opt/ros/humble/setup.bash\nsource /ros2_ws/install/setup.bash\nexec \"\$@\"' > /ros_entrypoint.sh" && \
   chmod u+x /ros_entrypoint.sh
 
 ENTRYPOINT ["/ros_entrypoint.sh"]
