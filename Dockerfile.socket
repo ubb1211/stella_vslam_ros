@@ -1,7 +1,7 @@
 FROM ros:humble
 ENV DEBIAN_FRONTEND noninteractive
 
-# install dependencies via apt
+# Install dependencies via apt
 ENV DEBCONF_NOWARNINGS yes
 RUN set -x && \
   apt-get update -y -qq && \
@@ -23,7 +23,7 @@ RUN set -x && \
     libsuitesparse-dev && \
   : "other dependencies" && \
   apt-get install -y -qq \
-    libyaml-cpp-dev \ 
+    libyaml-cpp-dev \
     libopencv-dev \
     libeigen3-dev && \
   : "remove cache" && \
@@ -88,7 +88,7 @@ RUN set -x && \
   : "stella_vslam dependencies" && \
   apt-get update -y -qq && \
   apt-get install -y -qq \
-    ros-${ROS_DISTRO}-libg2o && \
+    ros-humble-libg2o && \
   : "remove cache" && \
   apt-get autoremove -y -qq && \
   rm -rf /var/lib/apt/lists/*
@@ -99,7 +99,10 @@ RUN set -x && \
   git submodule update -i --recursive && \
   mkdir -p build && \
   cd build && \
-  CMAKE_PREFIX_PATH=/opt/ros/${ROS_DISTRO}/lib/cmake cmake .. && \
+  cmake \
+    -DCMAKE_PREFIX_PATH=/opt/ros/humble \
+    -DUSE_STACK_TRACE_LOGGER=ON \
+    .. && \
   make -j${NUM_THREADS} && \
   make install && \
   rm -rf CMakeCache.txt CMakeFiles Makefile cmake_install.cmake example src && \
@@ -113,9 +116,9 @@ RUN set -x && \
   git checkout ${SOCKET_PUBLISHER_COMMIT} && \
   mkdir -p build && \
   cd build && \
-  CMAKE_PREFIX_PATH=/opt/ros/${ROS_DISTRO}/lib/cmake cmake \
+  cmake \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} \
+    -DCMAKE_PREFIX_PATH=/opt/ros/humble \
     .. && \
   make -j${NUM_THREADS} && \
   make install && \
@@ -144,12 +147,12 @@ COPY . /ros2_ws/src/stella_vslam_ros
 RUN set -x && \
   : "build ROS2 packages" && \
   bash -c "source /opt/ros/humble/setup.bash; \
-  colcon build --parallel-workers 4 --cmake-args \
-    -DUSE_STACK_TRACE_LOGGER=ON"
+  colcon build --parallel-workers ${NUM_THREADS}"
 
 RUN set -x && \
-  sh -c "echo '#'\!'/bin/bash\nset -e\nsource /opt/ros/humble/setup.bash\nsource /ros2_ws/install/setup.bash\nexec \"\$@\"' > /ros_entrypoint.sh" && \
+  sh -c "echo '#!/bin/bash\nset -e\nsource /opt/ros/humble/setup.bash\nsource /ros2_ws/install/setup.bash\nexec \"\$@\"' > /ros_entrypoint.sh" && \
   chmod u+x /ros_entrypoint.sh
 
 ENTRYPOINT ["/ros_entrypoint.sh"]
 CMD ["bash"]
+
